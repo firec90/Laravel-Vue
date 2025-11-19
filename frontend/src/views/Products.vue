@@ -43,23 +43,63 @@
           <td>{{ p.harga }}</td>
           <td>
             <button class="btn btn-warning btn-sm me-2" @click="edit(p)">Edit</button>
-            <button class="btn btn-danger btn-sm" @click="remove(p.kode_barang)">Hapus</button>
+            <button class="btn btn-danger btn-sm" @click="openDeleteModal(p.kode_barang)">Hapus</button>
           </td>
         </tr>
       </tbody>
     </table>
 
     <!-- MODAL EDIT (PALING SIMPLE) -->
-    <div v-if="editing" class="card p-3 mt-4">
-      <h5>Edit Produk</h5>
+    <div v-if="editing" 
+    class="modal fade show" 
+    tabindex="-1" 
+    style="display: block; background: rgba(0, 0, 0, 5);">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Edit Product</h5>
+            <button type="button" class="btn-close" @click="closeModal"></button>
+          </div>
+          <div class="modal-body">
+            <label>Kode Barang</label>
+            <input class="form-control mb-2" v-model="editData.kode_barang" disabled />
 
-      <input v-model="editData.nama_barang" class="form-control mb-2" />
-      <input v-model="editData.harga" class="form-control mb-2" />
+            <label>Nama Barang</label>
+            <input class="form-control mb-2" v-model="editData.nama_barang" />
 
-      <button class="btn btn-success me-2" @click="updateProduct">Simpan</button>
-      <button class="btn btn-secondary" @click="editing = null">Batal</button>
+            <label>Harga</label>
+            <input class="form-control mb-2" type="number" v-model="editData.harga" />
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" @click="closeModal">Batal</button>
+            <button class="btn btn-primary" @click="updateProduct">Simpan Perubahan</button>
+          </div>
+        </div>
+      </div>
     </div>
 
+    <!-- DELETE FROM MODAL -->
+     <div class="modal fade show" v-if="showDeleteModal" style="display:block; background:rgba(0,0,0,0.5)">
+      <div class="modal-dialog">
+        <div class="modal-content">
+
+          <div class="modal-header">
+            <h5 class="modal-title">Konfirmasi Hapus</h5>
+            <button type="button" class="btn-close" @click="showDeleteModal = false"></button>
+          </div>
+
+          <div class="modal-body">
+            Apakah Anda yakin ingin menghapus data ini?
+          </div>
+
+          <div class="modal-footer">
+            <button class="btn btn-secondary" @click="showDeleteModal = false">Batal</button>
+            <button class="btn btn-danger" @click="confirmDelete">Hapus</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -75,6 +115,10 @@
   align-items: center;
   justify-content: center;
   z-index: 9999;
+}
+
+.modal {
+  display: block;
 }
 </style>
 
@@ -96,17 +140,21 @@ const editData = ref({
   harga: 0,
 });
 
+const showDeleteModal = ref(false);
+const deleteTarget = ref(null);
+
 // === LOAD DATA PRODUK ===
 const loadProducts = async () => {
+  loading.value = true;
   const response = await api.get("/products");
   products.value = response.data;
+  loading.value = false;
 };
 
 onMounted(loadProducts);
 
 // === TAMBAH PRODUK ===
 const addProduct = async () => {
-  loading.value = true;
   await api.post("/products", {
     kode_barang: kode_barang.value,
     nama_barang: nama_barang.value,
@@ -117,34 +165,41 @@ const addProduct = async () => {
   nama_barang.value = "";
   harga.value = "";
 
-  loadProducts();
-  loading.value =false;
+  await loadProducts();
 };
 
 // === HAPUS ===
-const remove = async (kode) => {
-  loading.value = true;
-  await api.delete(`/products/${kode}`);
-  loadProducts();
-  loading.value =false;
+const openDeleteModal = (kode) => {
+  deleteTarget.value = kode;
+  showDeleteModal.value = true;
 };
 
-// === EDIT ===
+const confirmDelete = async () => {
+  await api.delete(`/products/${deleteTarget.value}`);
+  showDeleteModal.value = false;
+  deleteTarget.value = null;
+  await loadProducts();
+};
+
+// === EDIT - MODAL OPEN ===
 const edit = (p) => {
-  editing.value = p.kode_barang;
+  editing.value = true;
   editData.value = { ...p };
+};
+
+// === TUTUP MODAL ===
+const closeModal = () => {
+  editing.value = false;
 };
 
 // === UPDATE ===
 const updateProduct = async () => {
-  loading.value = true;
-  await api.put(`/products/${editing.value}`, {
+  await api.put(`/products/${editData.value.kode_barang}`, {
     nama_barang: editData.value.nama_barang,
     harga: editData.value.harga,
   });
 
-  editing.value = null;
-  loadProducts();
-  loading.value =false;
+  closeModal();
+  await loadProducts();
 };
 </script>
