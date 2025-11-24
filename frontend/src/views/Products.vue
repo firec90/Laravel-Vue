@@ -18,7 +18,7 @@
           <input v-model="nama_barang" class="form-control" placeholder="Nama Barang" />
         </div>
         <div class="col-md-3">
-          <input v-model="harga" class="form-control" placeholder="Harga" type="number" />
+          <input v-model="harga" class="form-control" placeholder="Harga" type="text" @input="harga = harga.replace(/[^0-9]/g, '')" />
         </div>
         <div class="col-md-2">
           <button @click="addProduct" class="btn btn-primary w-100">Tambah</button>
@@ -53,7 +53,8 @@
     <div v-if="editing" 
     class="modal fade show" 
     tabindex="-1" 
-    style="display: block; background: rgba(0, 0, 0, 5);">
+    style="display: block; background: rgba(0, 0, 0, 0.5);" 
+    @click.self="closeModal">
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
@@ -68,7 +69,7 @@
             <input class="form-control mb-2" v-model="editData.nama_barang" />
 
             <label>Harga</label>
-            <input class="form-control mb-2" type="number" v-model="editData.harga" />
+            <input class="form-control mb-2" v-model="editData.harga" type="text" @input="editData.harga = editData.harga.replace(/[^0-9]/g, '')" />
           </div>
           <div class="modal-footer">
             <button class="btn btn-secondary" @click="closeModal">Batal</button>
