@@ -5,12 +5,12 @@
 
       <div class="mb-3">
         <label>UserID</label>
-        <input v-model="userid" type="text" class="form-control" />
+        <input v-model="userid" type="text" class="form-control" ref="refUserID" @keyup.enter="focusPassword" />
       </div>
 
       <div class="mb-3">
         <label>Password</label>
-        <input v-model="password" type="password" class="form-control" />
+        <input v-model="password" type="password" class="form-control" ref="refPassword" @keyup.enter="login" />
       </div>
 
       <div v-if="loading" class="text-center mb-3">
@@ -40,6 +40,14 @@ const userid = ref("");
 const password = ref("");
 const error = ref("");
 const loading = ref(false);
+
+/* Tambahan: referensi input */
+const refUserID = ref(null);
+const refPassword = ref(null);
+
+const focusPassword = () => {
+  refPassword.value.focus();
+};
 
 const login = async() => {
   loading.value = true;
