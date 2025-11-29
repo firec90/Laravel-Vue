@@ -58,4 +58,89 @@ Penjelasan singkat:
 * views/* = halaman (Login, Products).
 * components/* = komponen ulang-pakai (nav, modal).
 
-SAMPAI `Langkah 4 — Konfigurasi environment (Vite)`
+## 5. Langkah 4 — Konfigurasi environment (Vite)
+Tujuan: letakkan alamat backend agar mudah ganti (dev/production).
+Buat file `.env` (di root `frontend/`):
+```
+VITE_API_URL=http://localhost:8000
+```
+
+Penjelasan:
+* VITE_ prefix diperlukan agar Vite exposed ke import.meta.env.
+* Gunakan VITE_API_URL dalam axios.js supaya semua request mengarah ke Laravel.
+
+Tapi  disini saya tidak memakainya, karena masih belajar saya tanamkan langsung ke file `src/api/axios.js`
+
+## 6. Buat file axios instance (src/api/axios.js)
+Tujuan: sentralisasi konfigurasi HTTP (baseURL, token header) sehingga tidak perlu copy–paste.
+
+Contoh sederhana (salin ke src/api/axios.js):
+```javascript
+import axios from "axios";
+
+const api = axios.create({
+    baseURL: "http://localhost:8000/api"
+});
+
+// === REQUEST INTERCEPTOR ===
+// Dipanggil sebelum request dikirim
+api.interceptors.request.use(config => {
+    const token = localStorage.getItem("auth_token");
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+});
+
+api.interceptors.response.use(
+    response => response,
+    error => {
+        const status = error.response?.status;
+        const url = error.config?.url;
+
+        // Jika error berasal dari /login -> biarkan Login.vue yang tangani
+        if (url === "/login" && status === 401) {
+            return Promise.reject(error);
+        }
+
+        // Token expired pada API lain
+        if (status == 401) {
+            localStorage.removeItem("auth_token");
+            alert("Sesi Anda telah berakhir. Silahkan login kembali!");
+            window.location.href = "/login";
+        }
+        
+        return Promise.reject(error);
+    }
+);
+
+export default api;
+```
+Penjelasan:
+* `baseURL` → semua `api.get('/products')` jadi `http://localhost:8000/api/products`.
+* `interceptor` → jika ada token di localStorage, otomatis ditambahkan header Authorization.
+
+## 7. Setup main.js & load Bootstrap
+Tujuan: bootstrapping Vue app dan CSS Bootstrap.  
+`src/main.js` contoh:
+```javascript
+import { createApp } from 'vue'
+import App from './App.vue'
+import router from './router/index.js'
+
+// import bootstrap
+import "bootstrap/dist/css/bootstrap.min.css"
+
+createApp(App).use(router).mount('#app')
+
+/*
+const app = createApp(App)
+app.use(router)
+app.mount('#app')
+*/
+```
+
+Penjelasan:
+* `bootstrap.bundle.min.js` mengaktifkan modal, dropdown, dll.
+
+# SAMPAI `Buat Halaman Login`
